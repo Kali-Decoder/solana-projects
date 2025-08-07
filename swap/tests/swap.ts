@@ -22,9 +22,6 @@ const TOKEN_PROGRAM: typeof TOKEN_2022_PROGRAM_ID | typeof TOKEN_PROGRAM_ID =
 
 const SECONDS = 1000;
 
-// Tests must complete within half this time otherwise
-// they are marked as slow. Since Anchor involves a little
-// network IO, these tests usually take about 15 seconds.
 const ANCHOR_SLOW_TEST_THRESHOLD = 40 * SECONDS;
 
 const getRandomBigNumber = (size = 8) => {
