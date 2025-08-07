@@ -1,46 +1,72 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Bank } from "../target/types/bank";
-import { assert } from 'chai';
-const web3 = anchor.web3;
+
+import { Bank } from "../target/types/bank"; 
+import { expect } from 'chai'; 
+const BANK_ACCOUNT_SEED = "bank";
+
 describe("bank", () => {
-  // Configure the client to use the local cluster.
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
-  const user = (provider.wallet as anchor.Wallet).payer;
-  const someRandomGuy = anchor.web3.Keypair.generate();
+  anchor.setProvider(anchor.AnchorProvider.env());
   const program = anchor.workspace.Bank as Program<Bank>;
+  const bankcreator = anchor.web3.Keypair.generate();
+  const bankName = "Nikku";
+  it("Create Banke",async ()=>{
+    await airdrop(program.provider.connection, bankcreator.publicKey);
 
-  before(async () => {
-    const balance = await provider.connection.getBalance(user.publicKey);
-    const balanceInSOL = balance / web3.LAMPORTS_PER_SOL;
-    const formattedBalance = new Intl.NumberFormat().format(balanceInSOL);
-    console.log(`Balance: ${formattedBalance} SOL`);
+    const [bank_publickey, bank_bump]  = await getBankAddress(bankcreator.publicKey, program.programId);
+
+    await program.methods.create(bankName).accounts({
+      owner: bankcreator.publicKey,
+      bankAccount: bank_publickey,
+      systemProgram: anchor.web3.SystemProgram.programId
+    }).signers([bankcreator]).rpc();
+
+    let bankAccountData = await program.account.bankAccount.fetch(bank_publickey);
+    expect(bankAccountData.name).to.eql(bankName)
+    expect(bankAccountData.owner).to.eql(bankcreator.publicKey)
+
   });
 
-  it("Create bank", async () => {
-  
+  it("Deposit into Bank",async ()=>{
+    const [bank_publickey, bank_bump] = getBankAddress(bankcreator.publicKey, program.programId);
+    let depositAmount = new anchor.BN(500);
+    await program.methods.deposit(depositAmount).accounts({
+      owner: bankcreator.publicKey,
+      bankAccount: bank_publickey,
+      systemProgram: anchor.web3.SystemProgram.programId
+    }).signers([bankcreator]).rpc();
 
-    const bankAccountSeed = "bank";
-    const [bankAccountPDA] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [
-        Buffer.from(bankAccountSeed),
-        user.publicKey.toBuffer()
-      ],
-      program.programId
-    );
-    const tx = await program.methods.create("Nikku").accounts({
-      owner: user.publicKey,
-      bankAccount: bankAccountPDA,
-      systemProgram: anchor.web3.SystemProgram.programId,
-    }).signers([user]).rpc();
-
-
-    const account = await program.account.bankAccount.fetch(bankAccountPDA);
-
-    console.log("Account name:", account.name);
-    assert.equal(account.name.toString(), "Nikku");
-    assert.equal(account.owner.toString(), user.publicKey.toString());
-    assert.equal(account.balance,0);
+    let bankAccountData = await program.account.bankAccount.fetch(bank_publickey);
+    expect(bankAccountData.balance.toNumber()).to.eql(depositAmount.toNumber());
   });
+
+
+  it("Withdraw from Bank ",async () =>{
+    const [bank_publickey, bank_bump] = getBankAddress(bankcreator.publicKey, program.programId);
+    let amount = new anchor.BN(300);
+    let bankAccountDataBefore = await program.account.bankAccount.fetch(bank_publickey);
+    await program.methods.withdraw(amount).accounts({
+      owner: bankcreator.publicKey,
+      bankAccount: bank_publickey,
+      systemProgram: anchor.web3.SystemProgram.programId
+    }).signers([bankcreator]).rpc();
+
+    let bankAccountDataAfter = await program.account.bankAccount.fetch(bank_publickey);
+    expect(bankAccountDataBefore.balance.toNumber() - amount.toNumber()).to.eql(bankAccountDataAfter.balance.toNumber())
+
+  });
+
+
 });
+
+function getBankAddress(bankCreator: anchor.web3.PublicKey, programID: anchor.web3.PublicKey) {
+  return anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode(BANK_ACCOUNT_SEED),
+      bankCreator.toBuffer()
+    ], programID);
+}
+
+async function airdrop(connection: any, address: any, amount = 1000000000) {
+  await connection.confirmTransaction(await connection.requestAirdrop(address, amount), "confirmed");
+}
