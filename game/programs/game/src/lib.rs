@@ -1,78 +1,68 @@
 use anchor_lang::prelude::*;
-// Function to create user statistics and initialize an account.
-declare_id!("4HFcKqqTHWvCwqT2CL5qmbprKJwCZeXWYNB4VAQEpcYh");
 
+declare_id!("BDS42gR1XMtdDGPJqUkCnsNvSRvrte1onM9y8JHQbcgJ");
 
-
-
-pub const GAME_SEED: &str = "game";
+// Defines the `game` module containing the business logic.
 #[program]
 pub mod game {
     use super::*;
-
-    pub fn initialize_profile(ctx:Context<InitializeProfile>,username:String) -> Result<()> {
-        let game_account = &mut ctx.accounts.game_profile;
-        game_account.name = username;
-        game_account.xp = 0;
-        game_account.level=0;
-        game_account.owner = ctx.accounts.owner.key();
-        game_account.bump = *ctx.bumps.get("game_profile").ok_or(GameError::BumpNotFound)?;
-        Ok(())
-    }
-
-    pub fn save_game(ctx:Context<UpdateProfile>,xp:u16,level:u16) -> Result<()> {
-        let game_account = &mut ctx.accounts.game_profile;
-        if ctx.accounts.owner.key() != game_account.owner {
-            return Err(GameError::Unauthorized.into());
+    // Function to create user statistics and initialize an account.
+    pub fn create_user_stats(ctx: Context<CreateUserStats>, name: String) -> Result<()> {
+        // Access and modify the user_stats account.
+        let user_stats = &mut ctx.accounts.user_stats;
+        user_stats.level = 0; // Set initial level to 0.
+        if name.as_bytes().len() > 200 {
+            // If the name exceeds 200 bytes, terminate with an error.
+            panic!(); // Error handling simplified for brevity.
         }
-        game_account.xp += xp;
-        game_account.level = level;
-
+        user_stats.name = name; // Store the name in the user_stats account.
+        user_stats.bump = ctx.bumps.user_stats; // Safely store the bump used for this account.
+        Ok(())
+    }
+    // handler function (add this next to the create_user_stats function in the game module)
+    pub fn change_user_name(ctx: Context<ChangeUserName>, new_name: String) -> Result<()> {
+        if new_name.as_bytes().len() > 200 {
+            // proper error handling omitted for brevity
+            panic!();
+        }
+        ctx.accounts.user_stats.name = new_name;
         Ok(())
     }
 }
 
-
-#[derive(Accounts)]
-pub struct UpdateProfile<'info>{
-    #[account(mut)]
-    pub owner : Signer<'info>,
-    #[account(mut)]
-    pub game_profile: Account<'info, GameProfile>
+// Data structure to store user statistics.
+#[account]
+pub struct UserStats {
+    level: u16,   // User's level, stored as a 16-bit unsigned integer.
+    name: String, // User's name, stored as a dynamically sized string.
+    bump: u8,     // Bump seed for address derivation.
 }
 
-
+// Accounts context structure for creating user statistics.
 #[derive(Accounts)]
-pub struct InitializeProfile<'info>{
+pub struct CreateUserStats<'info> {
     #[account(mut)]
-    pub owner : Signer<'info>,
+    pub user: Signer<'info>, // Signer who pays for the account creation and processing.
+    // Initializes a user_stats account with predefined space allocation.
     #[account(
         init,
-        space= 8 + GameProfile::INIT_SPACE,
-        payer = owner,
-        seeds = [GAME_SEED.as_bytes(),owner.key().as_ref()],
-        bump,
+        payer = user,
+        space = 8 + 2 + 4 + 200 + 1, // Account size calculation includes all fields.
+        seeds = [b"user-stats", user.key().as_ref()], // Seeds for deterministic address.
+        bump
     )]
-    pub game_profile: Account<'info, GameProfile>,
-
+    pub user_stats: Account<'info, UserStats>, // The user_stats account to be created.
+    pub system_program: Program<'info, System>, // System program to handle account creation.
 }
 
-#[account]
-#[derive(InitSpace)]
-pub struct GameProfile {
-    pub owner: Pubkey,
-    pub level: u16,
-    pub xp: u16,
-    #[max_len(100)]
-    pub name: String,
-    pub bump: u8,
-}
-
-
-#[error_code]
-pub enum GameError {
-    #[msg("Unauthorized action")]
-    Unauthorized,
-    #[msg("Bump not found")]
-    BumpNotFound,
+// Defines the accounts context for the `change_user_name` function in the smart contract.
+#[derive(Accounts)]
+pub struct ChangeUserName<'info> {
+    // Signer of the transaction, who is assumed to be the user making the change.
+    pub user: Signer<'info>,
+    // The `user_stats` account is required to be mutable because its data will be updated.
+    // This account is looked up using seeds comprising a static "user-stats" seed and the user's public key,
+    // ensuring that the account is unique per user.
+    #[account(mut, seeds = [b"user-stats", user.key().as_ref()], bump = user_stats.bump)]
+    pub user_stats: Account<'info, UserStats>,
 }
