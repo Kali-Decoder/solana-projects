@@ -1,0 +1,10 @@
+[package]
+name = "cli-tool"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap={version="4.5.42", features=["derive"]}
+pulldown-cmark = "0.13.0"
+maud ="0.27.0"
+
