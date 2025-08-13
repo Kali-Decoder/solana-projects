@@ -1,7 +1,11 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{associated_token::AssociatedToken, token_2022::{mint_to, MintTo, Token2022}, token_interface::{Mint, TokenAccount}};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_2022::{mint_to, MintTo, Token2022},
+    token_interface::{Mint, TokenAccount},
+};
 
-pub fn _mint(ctx: Context<MintContext>, _amount:u64) -> Result<()> {
+pub fn _mint(ctx: Context<MintContext>, _amount: u64) -> Result<()> {
     if _amount == 0 {
         panic!("Invalid amount!");
     }
@@ -11,17 +15,16 @@ pub fn _mint(ctx: Context<MintContext>, _amount:u64) -> Result<()> {
     let creator = &ctx.accounts.creator;
     let mint = &ctx.accounts.mint;
 
- 
     let mint_ctx = CpiContext::new(
         token_program.to_account_info(),
-        MintTo{
-            authority:creator.to_account_info(),
-            mint:mint.to_account_info(),
-            to:recipient_ata.to_account_info()
-        }
+        MintTo {
+            authority: creator.to_account_info(),
+            mint: mint.to_account_info(),
+            to: recipient_ata.to_account_info(),
+        },
     );
 
-    mint_to(mint_ctx,_amount)?;
+    mint_to(mint_ctx, _amount)?;
     Ok(())
 }
 
@@ -48,5 +51,5 @@ pub struct MintContext<'info> {
     pub recipient_ata: InterfaceAccount<'info, TokenAccount>,
     pub token_program: Program<'info, Token2022>,
     pub system_program: Program<'info, System>,
-    pub associated_token_program: Program<'info, AssociatedToken>
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
