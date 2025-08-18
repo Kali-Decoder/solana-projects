@@ -50,7 +50,7 @@ pub struct UploadPostTask<'info> {
     #[account(
         init,
         payer = owner,
-        seeds=[b"post".as_ref(), challenge.key().as_ref(), &day.to_le_bytes().as_ref()],
+        seeds=[b"post".as_ref(), challenge.key().as_ref(), day.to_le_bytes().as_ref()],
         bump,
         space = 8 + Task::INIT_SPACE
     )]

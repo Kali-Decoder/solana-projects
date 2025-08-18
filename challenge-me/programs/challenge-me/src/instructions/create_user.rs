@@ -19,9 +19,9 @@ pub struct InitializeAccount<'info> {
     #[account(
         init, 
         payer = user, 
-        seeds=[b"user_profile",user.key().as_ref()],
+        seeds=[b"user_profile".as_ref(),user.key().as_ref()],
         bump,
-        space = 8 + 32 + 4 + (32 * 1000)
+        space = 8 + 32 + 4 + (32 * 10)
     )]
     pub user_profile: Account<'info, UserProfile>,
     #[account(mut)]
