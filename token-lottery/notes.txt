@@ -1,0 +1,19 @@
+- Instructions Lottery
+    - initialize_config 
+    - Initialize_lottery
+    - buy_ticket
+    - commit_randomness
+    - choose_winner 
+    - claim_prize
+
+struct TokenLottery {
+    - Winner 
+    - Winner_claimed
+    - start_time 
+    - end_time 
+    - lottery_pot_amount 
+    - total_ticket 
+    - price 
+    - authority 
+    - randomness_account
+}
