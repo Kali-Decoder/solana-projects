@@ -9,18 +9,8 @@ describe("challenge-me", () => {
   anchor.setProvider(provider);
   const user = (provider.wallet as anchor.Wallet).payer;
   console.log("user address :", user.publicKey.toBase58());
-  const someRandomGuy = anchor.web3.Keypair.generate();
+  
   const program = anchor.workspace.ChallengeMe as Program<ChallengeMe>;
-
-  const challengeOption = {
-    oneWeek: { oneWeek: {} },
-    oneMonth: { oneMonth: {} },
-    twoMonths: { twoMonths: {} },
-    sixMonths: { sixMonths: {} },
-    oneYear: { oneYear: {} },
-    seventyFiveHard: { seventyFiveHard: {} }
-  };
-
   before(async () => {
     const balance = await provider.connection.getBalance(user.publicKey);
     const balanceInSOL = balance / web3.LAMPORTS_PER_SOL;
@@ -58,7 +48,7 @@ describe("challenge-me", () => {
     expect(afterChallengePda.totalDays).to.equal(7);
   });
 
-  it("Get All Challanges Asociated to user", async () => {
+  it("Get All Challanges Asocisated to user", async () => {
     let userPDA = await getUserPDA(user, program.programId);
     const userProfileAfter = await program.account.userProfile.fetch(userPDA);
     for(var i=0; i<userProfileAfter.challenges.length;i++){
@@ -95,25 +85,27 @@ describe("challenge-me", () => {
     const id = 1;
     const challengePDA = await getChallengePDA(user, program.programId, id);
     const day = 1;
-    const postId =1;
+    const postId = 2;
     const taskPDA = await getPostPDA(challengePDA, program.programId, postId);
+   
+    console.log("JS derived taskPDA:   ", taskPDA.toBase58());
 
     console.log("challengePDA: ", challengePDA.toBase58());
-    console.log("taskPDA: ", taskPDA.toBase58());
 
     await program.methods.uploadPost(
+      new anchor.BN(id),
+      new anchor.BN(postId),
       "Task One Completed",
       "Task One Completed Done",
       "✅",
       "Today",
       new anchor.BN(day),
-      new anchor.BN(postId),
     ).accounts({
       owner: user.publicKey,
       challenge: challengePDA,
       task: taskPDA,
       systemProgram: anchor.web3.SystemProgram.programId,
-    }).signers([user]).rpc({skipPreflight:true});
+    }).signers([user]).rpc();
 
     const afterPostPda = await program.account.task.fetch(taskPDA);
     console.log({afterPostPda}, "afterChallengePda");

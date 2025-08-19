@@ -25,6 +25,7 @@ pub fn _start_challenge(
     challenge_account.challenge_id = challenge_id;
     challenge_account.challenge_type = challenge_type;
     challenge_account.posts = Vec::new();
+    msg!("Challenge PDA in Rust: {:?}", challenge_account.key());
     user_account.challenges.push(challenge_account.key());
     Ok(())
 }
