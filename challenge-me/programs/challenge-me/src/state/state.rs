@@ -11,6 +11,7 @@ pub struct UserProfile {
 #[account]
 #[derive(InitSpace)]
 pub struct Task{
+    pub post_id : u64,
     pub owner : Pubkey,
     #[max_len(200)]
     pub title : String,
@@ -21,7 +22,7 @@ pub struct Task{
     #[max_len(100)]
     pub current_time: String ,
     pub challenge : Pubkey,
-    pub day : u64
+    pub day : u64   
 }
 
 #[account]

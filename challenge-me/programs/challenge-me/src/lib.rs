@@ -24,9 +24,10 @@ pub mod challenge_me {
         task_description: String,
         task_emoji: String,
         current_date: String,
-        day:u64
+        day:u64,
+        post_id:u64
     ) -> Result<()> {
-        _create_task(ctx,task_name, task_description, task_emoji, current_date,day)
+        _create_task(ctx,task_name, task_description, task_emoji, current_date,day,post_id)
     }
 
     pub fn start_challenge(ctx:Context<ChallengeContext>,challenge_id:u64, challenge_type:ChallengeType) ->Result<()>{

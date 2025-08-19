@@ -10,7 +10,7 @@ pub fn _start_challenge(
 
     let challenge_account = &mut ctx.accounts.challenge;
     let user_account = &mut ctx.accounts.user_account;
-   let days =  match challenge_type{
+    let days =  match challenge_type{
         ChallengeType::OneMonth => 30,
         ChallengeType::OneYear => 365,
         ChallengeType::OneWeek => 7,
@@ -24,6 +24,7 @@ pub fn _start_challenge(
     challenge_account.completed = false;
     challenge_account.challenge_id = challenge_id;
     challenge_account.challenge_type = challenge_type;
+    challenge_account.posts = Vec::new();
     user_account.challenges.push(challenge_account.key());
     Ok(())
 }

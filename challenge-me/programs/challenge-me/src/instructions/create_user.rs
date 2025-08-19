@@ -5,12 +5,10 @@ pub fn _create_user(ctx: Context<InitializeAccount>) -> Result<()> {
     let user_profile = &mut ctx.accounts.user_profile;
     user_profile.owner = ctx.accounts.user.key();
     user_profile.challenges = Vec::new();
-
     emit!(UserCreated{
         owner : ctx.accounts.user.key(),
         bump : ctx.bumps.user_profile
     });
-
     Ok(())
 }
 
