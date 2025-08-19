@@ -8,7 +8,7 @@ pub fn _create_user(ctx: Context<InitializeAccount>) -> Result<()> {
     emit!(UserCreated{
         owner : ctx.accounts.user.key(),
         bump : ctx.bumps.user_profile
-    });
+    }); 
     Ok(())
 }
 

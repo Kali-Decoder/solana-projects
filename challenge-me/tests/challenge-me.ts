@@ -92,50 +92,10 @@ describe("challenge-me", () => {
     }
   });
   it("Upload Updation to challenege | Upload Completed Task on Challenge Tracker", async () => {
-
-    const userForTest = web3.Keypair.generate();
-    // Airdrop SOL and wait for the balance to be greater than 0
-    let retries = 0;
-    let balance = 0;
-    while (balance === 0 && retries < 10) {
-      try {
-        const signature = await provider.connection.requestAirdrop(userForTest.publicKey, 1 * web3.LAMPORTS_PER_SOL);
-        await provider.connection.confirmTransaction(signature, "confirmed");
-        balance = await provider.connection.getBalance(userForTest.publicKey);
-      } catch (e) {
-        console.log(`Airdrop failed, retrying... Attempt ${retries + 1}`);
-        retries++;
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
-      }
-    }
-    if (balance === 0) {
-      throw new Error("Failed to airdrop SOL to the test user.");
-    }
-
-    // Create the user profile account
-    const userPDA = await getUserPDA(userForTest, program.programId);
-    await program.methods.initialize().accounts({
-      userProfile: userPDA,
-      user: userForTest.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId
-    }).signers([userForTest]).rpc();
-
-    // Create a new challenge for the test
-    const challengeId = new anchor.BN(2);
-    const challengePDA = await getChallengePDA(userForTest, program.programId, challengeId);
-    await program.methods.startChallenge(
-      challengeId,
-      { oneWeek: {} }
-    ).accounts({
-      owner: userForTest.publicKey,
-      challenge: challengePDA,
-      userAccount: userPDA,
-      systemProgram: anchor.web3.SystemProgram.programId,
-    }).signers([userForTest]).rpc();
-
-    // Now, perform the task upload as originally intended
+    const id = 1;
+    const challengePDA = await getChallengePDA(user, program.programId, id);
     const day = 1;
-    const postId = new anchor.BN(1);
+    const postId =1;
     const taskPDA = await getPostPDA(challengePDA, program.programId, postId);
 
     console.log("challengePDA: ", challengePDA.toBase58());
@@ -147,13 +107,13 @@ describe("challenge-me", () => {
       "✅",
       "Today",
       new anchor.BN(day),
-      postId,
+      new anchor.BN(postId),
     ).accounts({
-      owner: userForTest.publicKey,
+      owner: user.publicKey,
       challenge: challengePDA,
       task: taskPDA,
       systemProgram: anchor.web3.SystemProgram.programId,
-    }).signers([userForTest]).rpc();
+    }).signers([user]).rpc({skipPreflight:true});
 
     const afterPostPda = await program.account.task.fetch(taskPDA);
     console.log({afterPostPda}, "afterChallengePda");
