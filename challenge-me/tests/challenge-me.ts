@@ -63,7 +63,6 @@ describe("challenge-me", () => {
     const someRandomGuy = anchor.web3.Keypair.generate();
     const challengePDA = await getChallengePDA(someRandomGuy, program.programId, id);
     const userPDA = await getUserPDA(someRandomGuy, program.programId);
-  
     try {
       await program.methods.startChallenge(
         new anchor.BN(id),
@@ -71,49 +70,83 @@ describe("challenge-me", () => {
       ).accounts({
         owner: someRandomGuy.publicKey,
         challenge: challengePDA,
-        userAccount: userPDA, // user profile does NOT exist
+        userAccount: userPDA, 
         systemProgram: anchor.web3.SystemProgram.programId,
       }).signers([someRandomGuy]).rpc();
       expect.fail("Expected error for non-existent user profile");
     } catch (err) {
-      // Check error type
       console.log("Error caught as expected:", err.error ? err.error.errorMessage : err.toString());
-      expect(err.toString()).to.include("AccountNotInitialized"); // Anchor default error for missing account
+      expect(err.toString()).to.include("AccountNotInitialized");
     }
   });
-  it("Upload Updation to challenege | Upload Completed Task on Challenge Tracker", async () => {
+  it("Upload multiple posts to challenge | Upload Completed Tasks on Challenge Tracker", async () => {
     const id = 1;
     const challengePDA = await getChallengePDA(user, program.programId, id);
-    const day = 1;
-    const postId = 2;
-    const taskPDA = await getPostPDA(challengePDA, program.programId, postId);
-   
-    console.log("JS derived taskPDA:   ", taskPDA.toBase58());
-
-    console.log("challengePDA: ", challengePDA.toBase58());
-
-    await program.methods.uploadPost(
-      new anchor.BN(id),
-      new anchor.BN(postId),
-      "Task One Completed",
-      "Task One Completed Done",
-      "✅",
-      "Today",
-      new anchor.BN(day),
-    ).accounts({
-      owner: user.publicKey,
-      challenge: challengePDA,
-      task: taskPDA,
-      systemProgram: anchor.web3.SystemProgram.programId,
-    }).signers([user]).rpc();
-
-    const afterPostPda = await program.account.task.fetch(taskPDA);
-    console.log({afterPostPda}, "afterChallengePda");
-    expect(afterPostPda.discription).to.equal("Task One Completed Done");
-    expect(afterPostPda.title).to.equal("Task One Completed");
-    expect(afterPostPda.day.toNumber()).to.equal(1);
-
+    const posts = [
+      { postId: 1, title: "Task One Completed", desc: "Task One Completed Done", icon: "✅", date: "Day 1",day:1 },
+      { postId: 2, title: "Task Two Completed", desc: "Task Two Completed Done", icon: "🔥", date: "Day 2",day:2  },
+      { postId: 3, title: "Task Three Completed", desc: "Task Three Completed Done", icon: "🚀", date: "Day 3",day:3  },
+      { postId: 4, title: "Task Four Completed", desc: "Task Four Completed Done", icon: "🎯", date: "Day 4",day:4  },
+      { postId: 5, title: "Task Five Completed", desc: "Task Five Completed Done", icon: "🏆", date: "Day 5",day:5  },
+    ];
+  
+    for (const post of posts) {
+      const taskPDA = await getPostPDA(challengePDA, program.programId, post.postId);
+  
+      await program.methods.uploadPost(
+        new anchor.BN(id),
+        new anchor.BN(post.postId),
+        post.title,
+        post.desc,
+        post.icon,
+        post.date,
+        new anchor.BN(post.day),
+      ).accounts({
+        owner: user.publicKey,
+        challenge: challengePDA,
+        task: taskPDA,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      }).signers([user]).rpc();
+  
+      const afterPostPda = await program.account.task.fetch(taskPDA);
+      // Assertions
+      expect(afterPostPda.title).to.equal(post.title);
+      expect(afterPostPda.discription).to.equal(post.desc);
+      expect(afterPostPda.day.toNumber()).to.equal(post.day);
+    }
   });
+
+  it("Fetch all posts under one challenge", async () => {
+    const id = 1;
+    const challengePDA = await getChallengePDA(user, program.programId, id);
+  
+    let posts: any[] = [];
+    for (let postId = 1; postId <= 5; postId++) {
+      const taskPDA = await getPostPDA(challengePDA, program.programId, postId);
+      try {
+        const postAcc = await program.account.task.fetch(taskPDA);
+        let _post = {
+          postId: postAcc.postId.toNumber(), // BN → number
+          owner: postAcc.owner.toBase58(),   // PublicKey → string
+          title: postAcc.title,
+          description: postAcc.discription,  // typo preserved from struct
+          emoji: postAcc.emoji,
+          currentTime: postAcc.currentTime,
+          challenge: postAcc.challenge.toBase58(), // PublicKey → string
+          day: postAcc.day.toNumber()
+        }
+        posts.push(_post);
+      } catch (e) {
+        console.log(`Post ${postId} not found`, e.message);
+      }
+    }
+  
+    console.log("All posts for challenge", id, posts);
+    expect(posts.length).to.equal(5);
+    expect(posts[0].title).to.equal("Task One Completed"); // etc.
+  });
+  
+  
 
 });
 
