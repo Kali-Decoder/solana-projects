@@ -23,6 +23,7 @@ pub fn _create_pool(
     dice_pool_account.result = 0;
     dice_pool_account.remaining_seats = capacity;
     dice_pool_account.total_amount = 0;
+    dice_pool_account.clamied_amount = 0;
     Ok(())
 }
 #[derive(Accounts)]

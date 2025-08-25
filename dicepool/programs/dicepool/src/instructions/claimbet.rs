@@ -8,14 +8,18 @@ pub fn _claim(ctx: Context<ClaimContext>, id: u64) -> Result<()> {
     let user = &ctx.accounts.user;
     require!(dice_pool.ended, PoolError::PoolNotOver);
     require!(dice_player.user == user.key(), PoolError::NotYourAccount);
+
     if dice_player.target == dice_pool.result {
-        dice_player.claimed_amount = dice_player.amount;
-        
-        dice_player.claimed = true;
+        dice_player.claimed_amount = dice_pool.clamied_amount;
+        **ctx.accounts
+            .dice_pool
+            .to_account_info()
+            .try_borrow_mut_lamports()? -= dice_player.claimed_amount;
+        **ctx.accounts.user.to_account_info().try_borrow_mut_lamports()? += dice_player.claimed_amount;
     } else {
         dice_player.claimed_amount = 0;
-        dice_player.claimed = true;
     }
+    dice_player.claimed = true;
     Ok(())
 }
 

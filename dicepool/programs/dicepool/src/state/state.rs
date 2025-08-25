@@ -12,6 +12,7 @@ pub struct DicePool {
     pub ended:bool,
     pub base_amount:u64,
     pub creator:Pubkey,
+    pub clamied_amount:u64,
     #[max_len(20)] 
     pub betters : Vec<Pubkey>
 }

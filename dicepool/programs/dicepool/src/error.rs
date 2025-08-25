@@ -22,4 +22,6 @@ pub enum PoolError {
     PoolOver,
     #[msg("You are not in pool")]
     NotYourAccount,
+    #[msg("You are not Authorised")]
+    UnAuthorised,
 }

@@ -34,8 +34,8 @@ pub mod dicepool {
         _withdraw_all(ctx,id)
     }
 
-    pub fn set_result(ctx:Context<SetResultContext>,id: u64,result:u64) -> Result<()>{
-        _set_result(ctx,id,result)
+    pub fn set_result(ctx:Context<SetResultContext>,id: u64,result:u64,claimed_amount:u64) -> Result<()>{
+        _set_result(ctx,id,result,claimed_amount)
     }
 
     pub fn claim_amount(ctx:Context<ClaimContext>,id:u64) -> Result<()>{
