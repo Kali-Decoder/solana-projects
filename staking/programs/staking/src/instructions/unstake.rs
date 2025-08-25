@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-use anchor_lang::system_program;
+use anchor_lang::solana_program::program::invoke_signed;
+use anchor_lang::solana_program::system_instruction;
 
 use crate::error::StakingError;
 use crate::utils::update_points;
@@ -17,20 +18,19 @@ pub fn _unstake(ctx: Context<UnstakeContext>, amount: u64) -> Result<()> {
     );
     update_points(user_account, clock.unix_timestamp)?;
 
-    let vault_bump = vault.bump;
-    let vault_seeds: &[&[u8]] = &[b"vault", &[vault_bump]];
-    let signer: &[&[&[u8]]] = &[vault_seeds];
+    let bump = vault.bump;
+    let vault_seeds = &[b"vault".as_ref(), &[bump]];
+    let signer_seeds = &[vault_seeds[..]];
 
-    let cpi_ctx = CpiContext::new_with_signer(
-        ctx.accounts.system_program.to_account_info(),
-        system_program::Transfer {
-            from:   vault.to_account_info(),
-            to: ctx.accounts.user.to_account_info(),
-        },
-        signer,
-    );
-    system_program::transfer(cpi_ctx, amount)?;
-
+    invoke_signed(
+        &system_instruction::transfer(&vault.key(), &ctx.accounts.user.key(), amount),
+        &[
+            vault.to_account_info(),
+            ctx.accounts.user.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+        signer_seeds,
+    )?;
 
     vault.total_sol = vault
         .total_sol
@@ -66,7 +66,7 @@ pub struct UnstakeContext<'info> {
     #[account(
         mut,
         seeds = [b"vault"],
-        bump = vault.bump
+        bump
     )]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info, System>,

@@ -23,7 +23,7 @@ describe("staking", () => {
   });
 
   it("Initialize Vault !!!", async () => {
-    let vaultPda = await getVaultPda(program.programId);
+    const { vaultPda, vaultBump } = await getVaultPda(program.programId);
     console.log("Vault PDA address:", vaultPda.toBase58());
     await program.methods.initializeVault().accounts({
       vault: vaultPda,
@@ -52,7 +52,7 @@ describe("staking", () => {
 
   it("Stake some SOL !!!", async () => {
     let pda_account = await getUserAccount(program.programId, user);
-    let vaultPda = await getVaultPda(program.programId);
+    const { vaultPda, vaultBump } = await getVaultPda(program.programId);
     console.log("pda_account address :", pda_account.toBase58());
     const stakeAmount = 1 * web3.LAMPORTS_PER_SOL; // 1 SOL
     await program.methods.stake(new anchor.BN(stakeAmount)).accounts({
@@ -83,23 +83,30 @@ describe("staking", () => {
 
   it("Unstake your money !!!", async () => {
     let pda_account = await getUserAccount(program.programId, user);
-    let vaultPda = await getVaultPda(program.programId);
-    const balance = await provider.connection.getBalance(pda_account);
-    console.log("pda_account address :", pda_account.toBase58(), { balance });
-    const unstakeAmount = new anchor.BN(web3.LAMPORTS_PER_SOL / 2);
+    const { vaultPda, vaultBump } = await getVaultPda(program.programId);
+  
+    const vaultBalanceBefore = await provider.connection.getBalance(vaultPda);
+    console.log("Vault PDA address:", vaultPda.toBase58(), "balance:", vaultBalanceBefore);
+  
+    const unstakeAmount = new anchor.BN(Math.floor(web3.LAMPORTS_PER_SOL / 2));
+  
     await program.methods.unstake(unstakeAmount).accounts({
       user: user.publicKey,
       userAccount: pda_account,
-      vault:vaultPda,
+      vault: vaultPda,
       systemProgram: web3.SystemProgram.programId,
     }).signers([user]).rpc();
-
+  
     const account = await program.account.stakeAccount.fetch(pda_account);
-    expect(account.stakedAmount.toNumber()).to.equal(0.5 * web3.LAMPORTS_PER_SOL);
+    expect(account.stakedAmount.toNumber()).to.equal(Math.floor(web3.LAMPORTS_PER_SOL / 2));
     expect(account.isActive).to.equal(true);
+  
+    const vaultBalanceAfter = await provider.connection.getBalance(vaultPda);
+    console.log("Vault balance after unstake:", vaultBalanceAfter);
+  
     console.log("You have unstaked 0.5 SOL !!!", { account });
-
   });
+  
 });
 
 
@@ -110,13 +117,12 @@ const getUserAccount = async (programID, user) => {
   );
   return pda_account;
 }
-
 const getVaultPda = async (programID) => {
-  const [vaultPda, _] = await web3.PublicKey.findProgramAddressSync(
+  const [vaultPda, vaultBump] = await web3.PublicKey.findProgramAddressSync(
     [Buffer.from("vault")],
     programID
   );
-  return vaultPda;
+  return { vaultPda, vaultBump };
 };
 
 async function airdrop(connection: any, address: any, amount = 5000000000) {
