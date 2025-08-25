@@ -19,12 +19,12 @@ pub fn _claim_points(ctx:Context<ClaimPoints>) -> Result<()>{
 #[derive(Accounts)]
 pub struct ClaimPoints<'info> {
     #[account(mut)]
-    pub owner: Signer<'info>,
+    pub user: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"stake_account", owner.key().as_ref()],
+        seeds = [b"stake_account", user.key().as_ref()],
         bump,
-        constraint = user_account.is_active && user_account.owner == owner.key() @ StakingError::NotActive,
+        constraint = user_account.is_active && user_account.user == user.key() @ StakingError::NotActive,
     )]
     pub user_account: Account<'info, StakeAccount>,
     pub system_program: Program<'info, System>,

@@ -35,5 +35,5 @@ pub fn calculate_points_earned(staked_amount: u64, time_passed: u64) -> Result<u
     .ok_or(StakingError::Overflow)?
     .checked_div(SECONDS_PER_DAY as u128)
     .ok_or(StakingError::Overflow)?;
-    Ok(0)
+    Ok(points as u64)
 }

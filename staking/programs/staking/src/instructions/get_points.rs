@@ -26,12 +26,12 @@ pub fn _get_points(ctx:Context<GetPoints>) -> Result<()> {
 #[derive(Accounts)]
 pub struct GetPoints<'info>{
     #[account(mut)]
-    pub owner: Signer<'info>,
+    pub user: Signer<'info>,
 
     #[account(
-        seeds = [b"stake_account", owner.key().as_ref()],
+        seeds = [b"stake_account", user.key().as_ref()],
         bump = user_account.bump,
-        has_one = owner
+        has_one = user
     )]
     pub user_account: Account<'info, StakeAccount>,
 }

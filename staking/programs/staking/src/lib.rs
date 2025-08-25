@@ -34,4 +34,8 @@ pub mod staking {
     pub fn claim_points(ctx: Context<ClaimPoints>) -> Result<()> {
         _claim_points(ctx)
     }
+
+    pub fn initialize_vault(ctx: Context<InitVault>) -> Result<()> {
+        _initialize_vault(ctx)
+    }
 }

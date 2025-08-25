@@ -14,3 +14,6 @@ pub use unstake::*;
 
 pub mod claim_points;
 pub use claim_points::*;
+
+pub mod initialize_vault;
+pub use initialize_vault::*;
