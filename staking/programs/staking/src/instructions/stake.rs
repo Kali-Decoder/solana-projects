@@ -22,6 +22,7 @@ pub fn _stake(ctx:Context<StakeContext>,amount:u64) ->Result<()>{
     );
 
     system_program::transfer(cpi_context, amount)?;
+    
     vault.total_sol = vault.total_sol.checked_add(amount).ok_or(StakingError::Overflow)?;
     user_account.staked_amount = user_account.staked_amount.checked_add(amount)
     .ok_or(StakingError::Overflow)?;

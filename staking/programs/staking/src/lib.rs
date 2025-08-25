@@ -24,7 +24,7 @@ pub mod staking {
         _stake(ctx,amount)
     }
 
-    pub fn unstake(ctx:Context<UnstakeContext>,amount:u64) -> Result<()> {
+    pub fn unstake(ctx:Context<Unstake>,amount:u64) -> Result<()> {
         _unstake(ctx,amount)
     }
 
