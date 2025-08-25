@@ -55,7 +55,7 @@ describe("dicepool", () => {
       console.log(`Airdropped 10 SOL to user${i} : ${users[i].publicKey.toBase58()}`);
       const betAmount = new anchor.BN(50000000);
       let randomNumber = Math.floor(Math.random() * 6) + 1; // Random number between 1 and 6
-      let { playerPda } = await getPlayerPda(program.programId, users[i], new anchor.BN(poolId));
+      let { playerPda } = await getPlayerPda(program.programId, users[i].publicKey, new anchor.BN(poolId));
       await program.methods
         .joinPool(poolId, betAmount, new anchor.BN(randomNumber))
         .accounts({
@@ -77,21 +77,57 @@ describe("dicepool", () => {
 
   });
 
-  it("User should Bet in Pool", async () => {
+  // it("User should Bet in Pool", async () => {
+  //   let { poolPda } = await getPoolPda(program.programId, user, new anchor.BN(poolId));
+
+  //   let beforeBalance = await provider.connection.getBalance(poolPda);
+
+  //   await program.methods.withdrawAll(poolId).accounts({
+  //     creator: user.publicKey,
+  //     dicePool: poolPda,
+  //   }).signers([user]).rpc();
+
+  //   let afterBalance = await provider.connection.getBalance(poolPda);
+
+  //   console.log("Before Balance:", beforeBalance);
+  //   console.log("After Balance:", afterBalance);
+  // });
+
+  it("Set Result by pool creator", async () => {
     let { poolPda } = await getPoolPda(program.programId, user, new anchor.BN(poolId));
-    let poolAccountBefore = await program.account.dicePool.fetch(poolPda);
-    let beforeBalance = await provider.connection.getBalance(poolPda);
+    let result = Math.floor(Math.random() * 6) + 1; // Random number between 1 and 6
 
-    await program.methods.withdrawAll(poolId).accounts({
-      creator: user.publicKey,
-      dicePool: poolPda,
-    }).signers([user]).rpc();
-    let poolAccountAfter = await program.account.dicePool.fetch(poolPda);
-    let afterBalance = await provider.connection.getBalance(poolPda);
+    let poolMembers = (await program.account.dicePool.fetch(poolPda)).betters;
+    let totalWinners = 0;
 
-    console.log("Before Balance:", beforeBalance);
-    console.log("After Balance:", afterBalance);
-  });
+    for (let i = 0; i < poolMembers.length; i++) {
+      let player = poolMembers[i];
+      let playerPda = (await getPlayerPda(program.programId, player, new anchor.BN(poolId))).playerPda;
+      console.log("playerPda:", playerPda.toBase58());
+      let playerAccount = await program.account.dicePlayer.fetch(playerPda);
+      console.log(playerAccount,"pla")
+      // if (playerAccount.target.toNumber() === result) {
+      //   totalWinners++;
+      // } else {
+      //   continue;
+      // }
+    }
+    // const totalAmountDistribute = (await program.account.dicePool.fetch(poolPda)).totalAmount.toNumber();
+    // const claimedAmount = Math.floor(totalAmountDistribute / totalWinners);
+
+    // await program.methods.setResult(new anchor.BN(poolId), new anchor.BN(result), new anchor.BN(claimedAmount)).accounts({
+    //   creator: user.publicKey,
+    //   dicePool: poolPda,
+    // }).signers([user]).rpc();
+
+    // const poolAccount = await program.account.dicePool.fetch(poolPda);
+    // expect(poolAccount.result.toNumber()).to.equal(3);
+    // expect(poolAccount.ended).to.equal(true);
+
+  })
+
+
+
 });
 
 
@@ -105,7 +141,7 @@ const getPoolPda = async (programID, user, poolId) => {
 
 const getPlayerPda = async (programID, user, poolId) => {
   const [playerPda, playerBump] = await web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("dice_player"), user.publicKey.toBuffer(), poolId.toArrayLike(Buffer, "le", 8)],
+    [Buffer.from("dice_player"), user.toBuffer(), poolId.toArrayLike(Buffer, "le", 8)],
     programID
   );
   return { playerPda, playerBump };
